@@ -167,6 +167,10 @@ func TestBadInputsReturnErrors(t *testing.T) {
 			Start: []*Node{{Rules: map[string]any{"bad rule": 1}}},
 		},
 		{
+			// returns a non-boolean
+			Start: []*Node{{Rules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)}},
+		},
+		{
 			Start: []*Node{{WeightRules: mustParse(`{"var": ["is_smoker"]}`)}},
 		},
 		{

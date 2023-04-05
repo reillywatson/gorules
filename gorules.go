@@ -26,10 +26,6 @@ type Node struct {
 	parents []*Node
 }
 
-func (n *Node) String() string {
-	return fmt.Sprintf("%s %p", n.Id, n)
-}
-
 type Result struct {
 	Node   *Node
 	Weight int
