@@ -188,32 +188,34 @@ func TestLoopDoesntRunForever(t *testing.T) {
 }
 
 func BenchmarkSolve(b *testing.B) {
+	graph := []Node{
+		{
+			Id: "a",
+			Transitions: []Node{
+				{Id: "b"},
+				{
+					Id: "c", Transitions: []Node{
+						{Id: "d"},
+					},
+				},
+			},
+		},
+		{
+			Id:    "e",
+			Rules: mustParse(`{"var": ["is_smoker"]}`),
+			Transitions: []Node{
+				{Id: "f"},
+				{
+					Id: "g", Transitions: []Node{
+						{Id: "h"},
+					},
+				},
+			},
+		},
+	}
+	data := map[string]any{"is_smoker": true, "foo": "bar", "some_other_val": true, "hey": "ya"}
 	for i := 0; i < b.N; i++ {
-		_, err := Solve([]Node{
-			{
-				Id: "a",
-				Transitions: []Node{
-					{Id: "b"},
-					{
-						Id: "c", Transitions: []Node{
-							{Id: "d"},
-						},
-					},
-				},
-			},
-			{
-				Id:    "e",
-				Rules: mustParse(`{"var": ["is_smoker"]}`),
-				Transitions: []Node{
-					{Id: "f"},
-					{
-						Id: "g", Transitions: []Node{
-							{Id: "h"},
-						},
-					},
-				},
-			},
-		}, map[string]any{"is_smoker": true, "foo": "bar", "some_other_val": true, "hey": "ya"})
+		_, err := Solve(graph, data)
 		if err != nil {
 			b.Fatal(err)
 		}
