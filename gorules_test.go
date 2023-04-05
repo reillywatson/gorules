@@ -32,24 +32,24 @@ func TestSolve(t *testing.T) {
 		{
 			Start: []*Node{
 				{
-					Id: "a",
+					Payload: "a",
 					Transitions: []*Node{
-						{Id: "b"},
+						{Payload: "b"},
 						{
-							Id: "c", Transitions: []*Node{
-								{Id: "d"},
+							Payload: "c", Transitions: []*Node{
+								{Payload: "d"},
 							},
 						},
 					},
 				},
 				{
-					Id:    "e",
-					Rules: mustParse(`{"var": ["is_smoker"]}`),
+					Payload: "e",
+					Rules:   mustParse(`{"var": ["is_smoker"]}`),
 					Transitions: []*Node{
-						{Id: "f"},
+						{Payload: "f"},
 						{
-							Id: "g", Transitions: []*Node{
-								{Id: "h"},
+							Payload: "g", Transitions: []*Node{
+								{Payload: "h"},
 							},
 						},
 					},
@@ -61,24 +61,24 @@ func TestSolve(t *testing.T) {
 		{
 			Start: []*Node{
 				{
-					Id: "a",
+					Payload: "a",
 					Transitions: []*Node{
-						{Id: "b", Weight: 10},
+						{Payload: "b", Weight: 10},
 						{
-							Id: "c", Transitions: []*Node{
-								{Id: "d"},
+							Payload: "c", Transitions: []*Node{
+								{Payload: "d"},
 							},
 						},
 					},
 				},
 				{
-					Id:    "e",
-					Rules: mustParse(`{"var": ["is_smoker"]}`),
+					Payload: "e",
+					Rules:   mustParse(`{"var": ["is_smoker"]}`),
 					Transitions: []*Node{
-						{Id: "f", Weight: 20},
+						{Payload: "f", Weight: 20},
 						{
-							Id: "g", Transitions: []*Node{
-								{Id: "h"},
+							Payload: "g", Transitions: []*Node{
+								{Payload: "h"},
 							},
 						},
 					},
@@ -89,25 +89,25 @@ func TestSolve(t *testing.T) {
 		},
 		{
 			Start: []*Node{
-				{Id: "a"},
-				{Id: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
+				{Payload: "a"},
+				{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
 			},
 			Data:        map[string]any{"is_smoker": false},
 			ExpectedIds: []string{"a"},
 		},
 		{
 			Start: []*Node{
-				{Id: "a", Rules: mustParse(`{"var": ["is_smoker"]}`)},
-				{Id: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
+				{Payload: "a", Rules: mustParse(`{"var": ["is_smoker"]}`)},
+				{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
 			},
 			Data:        map[string]any{"is_smoker": false},
 			ExpectedIds: nil,
 		},
 		{
 			Start: []*Node{
-				{Id: "a", Transitions: []*Node{
-					{Id: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
-					{Id: "c", Weight: 75},
+				{Payload: "a", Transitions: []*Node{
+					{Payload: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
+					{Payload: "c", Weight: 75},
 				}},
 			},
 			Data:        map[string]any{"is_smoker": true},
@@ -115,9 +115,9 @@ func TestSolve(t *testing.T) {
 		},
 		{
 			Start: []*Node{
-				{Id: "a", Transitions: []*Node{
-					{Id: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
-					{Id: "c", Weight: 75},
+				{Payload: "a", Transitions: []*Node{
+					{Payload: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
+					{Payload: "c", Weight: 75},
 				}},
 			},
 			Data:        map[string]any{"is_smoker": false},
@@ -138,10 +138,10 @@ func TestSolve(t *testing.T) {
 }
 
 func TestGraphWithMergingBranches(t *testing.T) {
-	a := &Node{Id: "a"}
-	b := &Node{Id: "b"}
-	c := &Node{Id: "c"}
-	d := &Node{Id: "d"}
+	a := &Node{Payload: "a"}
+	b := &Node{Payload: "b"}
+	c := &Node{Payload: "c"}
+	d := &Node{Payload: "d"}
 	a.Transitions = []*Node{b, c}
 	b.Transitions = []*Node{d}
 	c.Transitions = []*Node{d}
@@ -189,9 +189,9 @@ func TestBadInputsReturnErrors(t *testing.T) {
 }
 
 func TestLoopDoesntRunForever(t *testing.T) {
-	a := &Node{Id: "a"}
-	b := &Node{Id: "b"}
-	c := &Node{Id: "c"}
+	a := &Node{Payload: "a"}
+	b := &Node{Payload: "b"}
+	c := &Node{Payload: "c"}
 	a.Transitions = []*Node{b}
 	b.Transitions = []*Node{c}
 	c.Transitions = []*Node{a}
@@ -213,24 +213,24 @@ func TestLoopDoesntRunForever(t *testing.T) {
 func BenchmarkSolve(b *testing.B) {
 	graph := []*Node{
 		{
-			Id: "a",
+			Payload: "a",
 			Transitions: []*Node{
-				{Id: "b"},
+				{Payload: "b"},
 				{
-					Id: "c", Transitions: []*Node{
-						{Id: "d"},
+					Payload: "c", Transitions: []*Node{
+						{Payload: "d"},
 					},
 				},
 			},
 		},
 		{
-			Id:    "e",
-			Rules: mustParse(`{"var": ["is_smoker"]}`),
+			Payload: "e",
+			Rules:   mustParse(`{"var": ["is_smoker"]}`),
 			Transitions: []*Node{
-				{Id: "f"},
+				{Payload: "f"},
 				{
-					Id: "g", Transitions: []*Node{
-						{Id: "h"},
+					Payload: "g", Transitions: []*Node{
+						{Payload: "h"},
 					},
 				},
 			},
@@ -248,7 +248,7 @@ func BenchmarkSolve(b *testing.B) {
 func ids(nodes []*Node) []string {
 	var res []string
 	for _, n := range nodes {
-		res = append(res, n.Id)
+		res = append(res, n.Payload.(string))
 	}
 	return res
 }

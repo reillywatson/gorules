@@ -1,3 +1,7 @@
+// package gorules is a rules engine. Given a set of input nodes and a data map, it will output a list of terminal nodes
+// reachable from the input nodes, ordered by weight.
+// Rules are implemented using JsonLogic (https://jsonlogic.com).
+
 package gorules
 
 import (
@@ -9,13 +13,14 @@ import (
 
 // A Node represents a point in a graph.
 type Node struct {
-	Id string
 	// Payload is an arbitrary set of data associated with this Node.
 	Payload any
 	// Transitions is the list of Nodes that can be transitioned to from this node.
 	// A node with no transitions is considered a terminal node.
 	Transitions []*Node
 	// Weight defines the order in which results from Solve will be returned.
+	// If WeightRules are defined, results from Solve will populate Weight with the
+	// calculated weight, otherwise Weight will be the weight as passed into Solve.
 	Weight int
 	// WeightRules is an optional set of rules to define the weight of this node.
 	// A node with no WeightRules has a weight of `Weight`.
