@@ -2,6 +2,7 @@ package gorules
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -62,7 +63,7 @@ func TestSolve(t *testing.T) {
 				{
 					Id: "a",
 					Transitions: []Node{
-						{Id: "b"},
+						{Id: "b", Weight: 10},
 						{
 							Id: "c", Transitions: []Node{
 								{Id: "d"},
@@ -74,7 +75,7 @@ func TestSolve(t *testing.T) {
 					Id:    "e",
 					Rules: mustParse(`{"var": ["is_smoker"]}`),
 					Transitions: []Node{
-						{Id: "f"},
+						{Id: "f", Weight: 20},
 						{
 							Id: "g", Transitions: []Node{
 								{Id: "h"},
@@ -84,7 +85,7 @@ func TestSolve(t *testing.T) {
 				},
 			},
 			Data:        map[string]any{"is_smoker": true},
-			ExpectedIds: []string{"b", "d", "f", "h"},
+			ExpectedIds: []string{"f", "b", "d", "h"},
 		},
 		{
 			Start: []Node{
@@ -104,20 +105,35 @@ func TestSolve(t *testing.T) {
 		},
 		{
 			Start: []Node{
-				{Id: "a", Rules: mustParse(`{"var": ["is_smoker"]}`)},
+				{Id: "a", Transitions: []Node{
+					{Id: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
+					{Id: "c", Weight: 75},
+				}},
 			},
-			Data:        nil,
-			ExpectedIds: nil,
+			Data:        map[string]any{"is_smoker": true},
+			ExpectedIds: []string{"b", "c"},
+		},
+		{
+			Start: []Node{
+				{Id: "a", Transitions: []Node{
+					{Id: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
+					{Id: "c", Weight: 75},
+				}},
+			},
+			Data:        map[string]any{"is_smoker": false},
+			ExpectedIds: []string{"c", "b"},
 		},
 	}
-	for _, test := range tests {
-		got, err := Solve(test.Start, test.Data)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(ids(got), test.ExpectedIds) {
-			t.Errorf("expected %v, got %v", test.ExpectedIds, ids(got))
-		}
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d", i+1), func(t *testing.T) {
+			got, err := Solve(test.Start, test.Data)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(ids(got), test.ExpectedIds) {
+				t.Errorf("expected %v, got %v", test.ExpectedIds, ids(got))
+			}
+		})
 	}
 }
 
@@ -129,6 +145,12 @@ func TestBadInputsReturnErrors(t *testing.T) {
 	}{
 		{
 			Start: []Node{{Rules: map[string]any{"bad rule": 1}}},
+		},
+		{
+			Start: []Node{{WeightRules: mustParse(`{"var": ["is_smoker"]}`)}},
+		},
+		{
+			Start: []Node{{WeightRules: map[string]any{"bad rule": 1}}},
 		},
 		{
 			Start: []Node{{Transitions: []Node{{Rules: map[string]any{"bad rule": 1}}}}},

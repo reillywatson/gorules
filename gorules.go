@@ -2,6 +2,7 @@ package gorules
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/diegoholiveira/jsonlogic"
 )
@@ -33,6 +34,7 @@ type Result struct {
 
 // Solve returns a list of terminal Nodes reachable from nodes, given the values in data.
 // Solve returns an error if any of the nodes' rules are invalid JsonLogic definitions.
+// Nodes are returned in descending order of weight.
 func Solve(nodes []Node, data map[string]any) ([]Node, error) {
 	for {
 		var err error
@@ -44,6 +46,9 @@ func Solve(nodes []Node, data map[string]any) ([]Node, error) {
 			break
 		}
 	}
+	sort.SliceStable(nodes, func(i, j int) bool {
+		return nodes[i].Weight > nodes[j].Weight
+	})
 	return nodes, nil
 }
 
@@ -57,6 +62,10 @@ func transitions(startNodes []Node, data map[string]any) ([]Node, error) {
 		if !isValid {
 			continue
 		}
+		node.Weight, err = weight(node.Weight, node.WeightRules, data)
+		if err != nil {
+			return nil, err
+		}
 		if len(node.Transitions) == 0 {
 			results = append(results, node)
 		}
@@ -65,13 +74,37 @@ func transitions(startNodes []Node, data map[string]any) ([]Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			if isValid {
-				results = append(results, prospect)
+			if !isValid {
+				continue
 			}
+			prospect.Weight, err = weight(prospect.Weight, prospect.WeightRules, data)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, prospect)
 		}
 	}
 
 	return results, nil
+}
+
+func weight(weight int, rules map[string]any, data map[string]any) (val int, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("error applying rules %+v with data %+v", rules, data)
+		}
+	}()
+	if len(rules) == 0 {
+		return weight, nil
+	}
+	res, err := jsonlogic.ApplyInterface(rules, data)
+	if err != nil {
+		return 0, err
+	}
+	if asFloat, ok := res.(float64); ok {
+		return int(asFloat), nil
+	}
+	return 0, fmt.Errorf("rule weight didn't return a number, got type %T", res)
 }
 
 func allTerminal(nodes []Node) bool {
@@ -90,15 +123,15 @@ func valid(node Node, data map[string]any) (valid bool, err error) {
 			err = fmt.Errorf("error applying rules %+v with data %+v", node.Rules, data)
 		}
 	}()
+	if len(node.Rules) == 0 {
+		return true, nil
+	}
 	res, err := jsonlogic.ApplyInterface(node.Rules, data)
 	if err != nil {
 		return false, err
 	}
-	if asMap, ok := res.(map[string]any); ok && len(asMap) == 0 {
-		return true, nil
+	if asBool, ok := res.(bool); ok {
+		return asBool, nil
 	}
-	if asBool, _ := res.(bool); asBool {
-		return true, nil
-	}
-	return false, nil
+	return false, fmt.Errorf("rule didn't return a boolean, got %T", res)
 }
