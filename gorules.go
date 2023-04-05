@@ -30,9 +30,6 @@ type Node struct {
 	// A node with no Rules is considered reachable.
 	// Rules are defined as JsonLogic maps (see https://jsonlogic.com).
 	Rules map[string]any
-
-	// for cycle detection
-	parents []*Node
 }
 
 // ErrCycleDetected is returned if a graph is passed to Solve that has a cycle in it.
@@ -43,15 +40,10 @@ var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
 // or ErrCycleDetected if the graph contains a cycle.
 // Nodes are returned in descending order of weight.
 func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
-	for {
-		var err error
-		nodes, err = transitions(nodes, data, valid)
-		if err != nil {
-			return nil, err
-		}
-		if allTerminal(nodes) {
-			break
-		}
+	var err error
+	nodes, err = bfs(nodes, data, valid)
+	if err != nil {
+		return nil, err
 	}
 	for _, n := range nodes {
 		var err error
@@ -65,47 +57,37 @@ func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
 	return nodes, nil
 }
 
-func transitions(startNodes []*Node, data map[string]any, canVisit func(node *Node, data map[string]any) (bool, error)) ([]*Node, error) {
-	var results []*Node
-	for i := 0; i < len(startNodes); i++ {
-		node := startNodes[i]
-		isValid, err := canVisit(node, data)
+func bfs(start []*Node, data map[string]any, canVisit func(node *Node, data map[string]any) (bool, error)) ([]*Node, error) {
+	var res []*Node
+	visited := map[*Node]bool{}
+	queue := start
+	for _, s := range start {
+		visited[s] = true
+	}
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		valid, err := canVisit(curr, data)
 		if err != nil {
 			return nil, err
 		}
-		if !isValid {
+		if !valid {
 			continue
 		}
-		if len(node.Transitions) == 0 {
-			results = append(results, node)
+		if len(curr.Transitions) == 0 {
+			res = append(res, curr)
 		}
-		for j := 0; j < len(node.Transitions); j++ {
-			prospect := node.Transitions[j]
-			if contains(node.parents, prospect) {
-				return nil, ErrCycleDetected
+		for _, t := range curr.Transitions {
+			if !visited[t] {
+				visited[t] = true
+				queue = append(queue, t)
 			}
-			isValid, err := canVisit(prospect, data)
-			if err != nil {
-				return nil, err
-			}
-			if !isValid {
-				continue
-			}
-			prospect.parents = append(append(prospect.parents, node), node.parents...)
-			results = append(results, prospect)
 		}
 	}
-	results = removeDuplicates(results)
-	return results, nil
-}
 
-func allTerminal(nodes []*Node) bool {
-	for _, n := range nodes {
-		if len(n.Transitions) > 0 {
-			return false
-		}
-	}
-	return true
+	return res, nil
 }
 
 func weight(weight int, rules map[string]any, data map[string]any) (val int, err error) {
@@ -145,29 +127,4 @@ func valid(node *Node, data map[string]any) (valid bool, err error) {
 		return asBool, nil
 	}
 	return false, fmt.Errorf("rule didn't return a boolean, got %T", res)
-}
-
-func contains[T comparable](list []T, val T) bool {
-	for _, v := range list {
-		if v == val {
-			return true
-		}
-	}
-	return false
-}
-
-func removeDuplicates[T comparable](list []T) []T {
-	if list == nil {
-		return nil
-	}
-	res := make([]T, 0, len(list))
-	seen := map[T]bool{}
-	for _, v := range list {
-		if seen[v] {
-			continue
-		}
-		seen[v] = true
-		res = append(res, v)
-	}
-	return res
 }
