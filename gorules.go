@@ -43,7 +43,7 @@ var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
 // or ErrCycleDetected if the graph contains a cycle.
 // Nodes are returned in descending order of weight.
 func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
-	for i := 0; i < 10; i++ {
+	for {
 		var err error
 		nodes, err = transitions(nodes, data)
 		if err != nil {

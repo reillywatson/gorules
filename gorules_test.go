@@ -105,6 +105,13 @@ func TestSolve(t *testing.T) {
 		},
 		{
 			Start: []*Node{
+				{Payload: "a", Transitions: []*Node{{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)}}},
+			},
+			Data:        map[string]any{"is_smoker": false},
+			ExpectedIds: nil,
+		},
+		{
+			Start: []*Node{
 				{Payload: "a", Transitions: []*Node{
 					{Payload: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
 					{Payload: "c", Weight: 75},
