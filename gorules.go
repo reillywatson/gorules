@@ -35,11 +35,6 @@ type Node struct {
 	parents []*Node
 }
 
-type Result struct {
-	Node   *Node
-	Weight int
-}
-
 // ErrCycleDetected is returned if a graph is passed to Solve that has a cycle in it.
 var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
 
