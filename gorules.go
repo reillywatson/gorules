@@ -32,12 +32,9 @@ type Node struct {
 	Rules map[string]any
 }
 
-// ErrCycleDetected is returned if a graph is passed to Solve that has a cycle in it.
-var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
-
 // Solve returns a list of terminal Nodes reachable from nodes, given the values in data.
-// Solve returns an error if any of the nodes' rules are invalid JsonLogic definitions,
-// or ErrCycleDetected if the graph contains a cycle.
+// Solve returns an error if any of the nodes' rules are invalid JsonLogic definitions.
+// Nodes are visited once (in breadth-first order), so a transition back to an already-visited node will be ignored.
 // Nodes are returned in descending order of weight.
 func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
 	var err error
