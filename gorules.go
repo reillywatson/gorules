@@ -24,8 +24,12 @@ type Node struct {
 	Weight int
 	// WeightRules is an optional set of rules to define the weight of this node.
 	// A node with no WeightRules has a weight of `Weight`.
+	// WeightRules are defined as JsonLogic maps (see https://jsonlogic.com).
 	WeightRules map[string]any
-	Rules       map[string]any
+	// Rules is an optional set of rules to define whether this node is reachable.
+	// A node with no Rules is considered reachable.
+	// Rules are defined as JsonLogic maps (see https://jsonlogic.com).
+	Rules map[string]any
 
 	// for cycle detection
 	parents []*Node
@@ -36,6 +40,7 @@ type Result struct {
 	Weight int
 }
 
+// ErrCycleDetected is returned if a graph is passed to Solve that has a cycle in it.
 var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
 
 // Solve returns a list of terminal Nodes reachable from nodes, given the values in data.
