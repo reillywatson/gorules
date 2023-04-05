@@ -10,6 +10,10 @@ import (
 
 func FuzzSolve(f *testing.F) {
 	f.Add([]byte(`[{"Id": "a", "Transitions": [{"Id": "b", Rules: [{"var": ["b"]}]}]}]`), []byte(`{"b":true}`))
+	f.Add([]byte(`[{"Payload":"a","Transitions":[{"Payload":"b"},{"Payload":"c","Transitions":[{"Payload":"d"}]}]},{"Payload":"e","Transitions":[{"Payload":"f"},{"Payload":"g","Transitions":[{"Payload":"h"}]}],"Rules":{"var":["is_smoker"]}}]`), []byte(`{"is_smoker":false}`))
+	f.Add([]byte(`[{"Payload":"a"},{"Payload":"b","Rules":{"var":["is_smoker"]}}]`), []byte(`{"is_smoker":false}`))
+	f.Add([]byte(`[{"Payload":"a","Transitions":[{"Payload":"b","WeightRules":{"if":[{"var":["is_smoker"]},100,50]}},{"Payload":"c","Weight":75}]}]`), []byte(`{"is_smoker":true}`))
+	f.Add([]byte(`[{"Payload":"a","Rules":{"and":[{"\u003c":[{"var":"temp"},110]},{"==":[{"var":"pie.filling"},"apple"]}]}}]`), []byte(`{"pie":{"filling":"apple"},"temp":100})`))
 	f.Fuzz(func(t *testing.T, graphBytes, dataBytes []byte) {
 		var graph []*Node
 		if err := json.Unmarshal(graphBytes, &graph); err != nil {
