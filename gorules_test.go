@@ -130,6 +130,26 @@ func TestSolve(t *testing.T) {
 			Data:        map[string]any{"is_smoker": false},
 			ExpectedIds: []string{"c", "b"},
 		},
+		{
+			Start: []*Node{
+				{Payload: "a", Rules: mustParse(`{ "and" : [
+					{"<" : [ { "var" : "temp" }, 110 ]},
+					{"==" : [ { "var" : "pie.filling" }, "apple" ] }
+				  ] }`)},
+			},
+			Data:        mustParse(`{ "temp" : 100, "pie" : { "filling" : "apple" } }`),
+			ExpectedIds: []string{"a"},
+		},
+		{
+			Start: []*Node{
+				{Payload: "a", Rules: mustParse(`{ "and" : [
+					{"<" : [ { "var" : "temp" }, 110 ]},
+					{"==" : [ { "var" : "pie.filling" }, "apple" ] }
+				  ] }`)},
+			},
+			Data:        mustParse(`{ "temp" : 120, "pie" : { "filling" : "apple" } }`),
+			ExpectedIds: nil,
+		},
 	}
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("%d", i+1), func(t *testing.T) {

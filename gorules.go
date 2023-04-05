@@ -45,7 +45,7 @@ var ErrCycleDetected = fmt.Errorf("cycle detected in graph")
 func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
 	for {
 		var err error
-		nodes, err = transitions(nodes, data)
+		nodes, err = transitions(nodes, data, valid)
 		if err != nil {
 			return nil, err
 		}
@@ -65,11 +65,11 @@ func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
 	return nodes, nil
 }
 
-func transitions(startNodes []*Node, data map[string]any) ([]*Node, error) {
+func transitions(startNodes []*Node, data map[string]any, canVisit func(node *Node, data map[string]any) (bool, error)) ([]*Node, error) {
 	var results []*Node
 	for i := 0; i < len(startNodes); i++ {
 		node := startNodes[i]
-		isValid, err := valid(node.Rules, data)
+		isValid, err := canVisit(node, data)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func transitions(startNodes []*Node, data map[string]any) ([]*Node, error) {
 			if contains(node.parents, prospect) {
 				return nil, ErrCycleDetected
 			}
-			isValid, err := valid(prospect.Rules, data)
+			isValid, err := canVisit(prospect, data)
 			if err != nil {
 				return nil, err
 			}
@@ -127,17 +127,17 @@ func weight(weight int, rules map[string]any, data map[string]any) (val int, err
 	return 0, fmt.Errorf("rule weight didn't return a number, got type %T", res)
 }
 
-func valid(rules map[string]any, data map[string]any) (valid bool, err error) {
+func valid(node *Node, data map[string]any) (valid bool, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			valid = false
-			err = fmt.Errorf("error applying rules %+v with data %+v", rules, data)
+			err = fmt.Errorf("error applying rules %+v with data %+v", node.Rules, data)
 		}
 	}()
-	if len(rules) == 0 {
+	if len(node.Rules) == 0 {
 		return true, nil
 	}
-	res, err := jsonlogic.ApplyInterface(rules, data)
+	res, err := jsonlogic.ApplyInterface(node.Rules, data)
 	if err != nil {
 		return false, err
 	}
