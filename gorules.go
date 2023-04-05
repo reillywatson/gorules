@@ -88,6 +88,15 @@ func transitions(startNodes []Node, data map[string]any) ([]Node, error) {
 	return results, nil
 }
 
+func allTerminal(nodes []Node) bool {
+	for _, n := range nodes {
+		if len(n.Transitions) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func weight(weight int, rules map[string]any, data map[string]any) (val int, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -105,15 +114,6 @@ func weight(weight int, rules map[string]any, data map[string]any) (val int, err
 		return int(asFloat), nil
 	}
 	return 0, fmt.Errorf("rule weight didn't return a number, got type %T", res)
-}
-
-func allTerminal(nodes []Node) bool {
-	for _, n := range nodes {
-		if len(n.Transitions) > 0 {
-			return false
-		}
-	}
-	return true
 }
 
 func valid(node Node, data map[string]any) (valid bool, err error) {
