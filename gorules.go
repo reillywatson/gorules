@@ -12,12 +12,12 @@ import (
 )
 
 // A Node represents a point in a graph.
-type Node struct {
+type Node[T any] struct {
 	// Payload is an arbitrary set of data associated with this Node.
-	Payload any
+	Payload T
 	// Transitions is the list of Nodes that can be transitioned to from this node.
 	// A node with no transitions is considered a terminal node.
-	Transitions []*Node
+	Transitions []*Node[T]
 	// Weight defines the order in which results from Solve will be returned.
 	// If WeightRules are defined, results from Solve will populate Weight with the
 	// calculated weight, otherwise Weight will be the weight as passed into Solve.
@@ -36,9 +36,9 @@ type Node struct {
 // Solve returns an error if any of the nodes' rules are invalid JsonLogic definitions.
 // Nodes are visited once (in breadth-first order), so a transition back to an already-visited node will be ignored.
 // Nodes are returned in descending order of weight.
-func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
+func Solve[T any](nodes []*Node[T], data map[string]any) ([]*Node[T], error) {
 	var err error
-	nodes, err = bfs(nodes, data, valid)
+	nodes, err = bfs(nodes, data, valid[T])
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +54,9 @@ func Solve(nodes []*Node, data map[string]any) ([]*Node, error) {
 	return nodes, nil
 }
 
-func bfs(start []*Node, data map[string]any, canVisit func(node *Node, data map[string]any) (bool, error)) ([]*Node, error) {
-	var res []*Node
-	visited := map[*Node]bool{}
+func bfs[T any](start []*Node[T], data map[string]any, canVisit func(node *Node[T], data map[string]any) (bool, error)) ([]*Node[T], error) {
+	var res []*Node[T]
+	visited := map[*Node[T]]bool{}
 	queue := start
 	for _, s := range start {
 		visited[s] = true
@@ -106,7 +106,7 @@ func weight(weight int, rules map[string]any, data map[string]any) (val int, err
 	return 0, fmt.Errorf("rule weight didn't return a number, got type %T", res)
 }
 
-func valid(node *Node, data map[string]any) (valid bool, err error) {
+func valid[T any](node *Node[T], data map[string]any) (valid bool, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			valid = false

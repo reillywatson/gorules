@@ -7,11 +7,11 @@ import (
 )
 
 func ExampleSolve_simple() {
-	graph := []*gorules.Node{
+	graph := []*gorules.Node[string]{
 		// a is always reachable, and a terminal node
 		{Payload: "a"},
 		// b is reachable if "foo" is true, and has a transition to c, which is always reachable.
-		{Payload: "b", Rules: map[string]any{"var": []any{"foo"}}, Transitions: []*gorules.Node{{Payload: "c"}}},
+		{Payload: "b", Rules: map[string]any{"var": []any{"foo"}}, Transitions: []*gorules.Node[string]{{Payload: "c"}}},
 	}
 	got, err := gorules.Solve(graph, map[string]any{"foo": true})
 	if err != nil {

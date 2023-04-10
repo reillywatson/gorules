@@ -15,7 +15,7 @@ func FuzzSolve(f *testing.F) {
 	f.Add([]byte(`[{"Payload":"a","Transitions":[{"Payload":"b","WeightRules":{"if":[{"var":["is_smoker"]},100,50]}},{"Payload":"c","Weight":75}]}]`), []byte(`{"is_smoker":true}`))
 	f.Add([]byte(`[{"Payload":"a","Rules":{"and":[{"\u003c":[{"var":"temp"},110]},{"==":[{"var":"pie.filling"},"apple"]}]}}]`), []byte(`{"pie":{"filling":"apple"},"temp":100})`))
 	f.Fuzz(func(t *testing.T, graphBytes, dataBytes []byte) {
-		var graph []*Node
+		var graph []*Node[string]
 		if err := json.Unmarshal(graphBytes, &graph); err != nil {
 			return
 		}
@@ -29,18 +29,18 @@ func FuzzSolve(f *testing.F) {
 
 func TestSolve(t *testing.T) {
 	tests := []struct {
-		Start       []*Node
+		Start       []*Node[string]
 		Data        map[string]any
 		ExpectedIds []string
 	}{
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{
 					Payload: "a",
-					Transitions: []*Node{
+					Transitions: []*Node[string]{
 						{Payload: "b"},
 						{
-							Payload: "c", Transitions: []*Node{
+							Payload: "c", Transitions: []*Node[string]{
 								{Payload: "d"},
 							},
 						},
@@ -49,10 +49,10 @@ func TestSolve(t *testing.T) {
 				{
 					Payload: "e",
 					Rules:   mustParse(`{"var": ["is_smoker"]}`),
-					Transitions: []*Node{
+					Transitions: []*Node[string]{
 						{Payload: "f"},
 						{
-							Payload: "g", Transitions: []*Node{
+							Payload: "g", Transitions: []*Node[string]{
 								{Payload: "h"},
 							},
 						},
@@ -63,13 +63,13 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"b", "d"},
 		},
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{
 					Payload: "a",
-					Transitions: []*Node{
+					Transitions: []*Node[string]{
 						{Payload: "b", Weight: 10},
 						{
-							Payload: "c", Transitions: []*Node{
+							Payload: "c", Transitions: []*Node[string]{
 								{Payload: "d"},
 							},
 						},
@@ -78,10 +78,10 @@ func TestSolve(t *testing.T) {
 				{
 					Payload: "e",
 					Rules:   mustParse(`{"var": ["is_smoker"]}`),
-					Transitions: []*Node{
+					Transitions: []*Node[string]{
 						{Payload: "f", Weight: 20},
 						{
-							Payload: "g", Transitions: []*Node{
+							Payload: "g", Transitions: []*Node[string]{
 								{Payload: "h"},
 							},
 						},
@@ -92,7 +92,7 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"f", "b", "d", "h"},
 		},
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{Payload: "a"},
 				{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
 			},
@@ -100,7 +100,7 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"a"},
 		},
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{Payload: "a", Rules: mustParse(`{"var": ["is_smoker"]}`)},
 				{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)},
 			},
@@ -108,15 +108,15 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: nil,
 		},
 		{
-			Start: []*Node{
-				{Payload: "a", Transitions: []*Node{{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)}}},
+			Start: []*Node[string]{
+				{Payload: "a", Transitions: []*Node[string]{{Payload: "b", Rules: mustParse(`{"var": ["is_smoker"]}`)}}},
 			},
 			Data:        map[string]any{"is_smoker": false},
 			ExpectedIds: nil,
 		},
 		{
-			Start: []*Node{
-				{Payload: "a", Transitions: []*Node{
+			Start: []*Node[string]{
+				{Payload: "a", Transitions: []*Node[string]{
 					{Payload: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
 					{Payload: "c", Weight: 75},
 				}},
@@ -125,8 +125,8 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"b", "c"},
 		},
 		{
-			Start: []*Node{
-				{Payload: "a", Transitions: []*Node{
+			Start: []*Node[string]{
+				{Payload: "a", Transitions: []*Node[string]{
 					{Payload: "b", WeightRules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)},
 					{Payload: "c", Weight: 75},
 				}},
@@ -135,7 +135,7 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"c", "b"},
 		},
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{Payload: "a", Rules: mustParse(`{ "and" : [
 					{"<" : [ { "var" : "temp" }, 110 ]},
 					{"==" : [ { "var" : "pie.filling" }, "apple" ] }
@@ -145,7 +145,7 @@ func TestSolve(t *testing.T) {
 			ExpectedIds: []string{"a"},
 		},
 		{
-			Start: []*Node{
+			Start: []*Node[string]{
 				{Payload: "a", Rules: mustParse(`{ "and" : [
 					{"<" : [ { "var" : "temp" }, 110 ]},
 					{"==" : [ { "var" : "pie.filling" }, "apple" ] }
@@ -169,14 +169,14 @@ func TestSolve(t *testing.T) {
 }
 
 func TestGraphWithMergingBranches(t *testing.T) {
-	a := &Node{Payload: "a"}
-	b := &Node{Payload: "b"}
-	c := &Node{Payload: "c"}
-	d := &Node{Payload: "d"}
-	a.Transitions = []*Node{b, c}
-	b.Transitions = []*Node{d}
-	c.Transitions = []*Node{d}
-	got, err := Solve([]*Node{a}, nil)
+	a := &Node[string]{Payload: "a"}
+	b := &Node[string]{Payload: "b"}
+	c := &Node[string]{Payload: "c"}
+	d := &Node[string]{Payload: "d"}
+	a.Transitions = []*Node[string]{b, c}
+	b.Transitions = []*Node[string]{d}
+	c.Transitions = []*Node[string]{d}
+	got, err := Solve([]*Node[string]{a}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,25 +190,25 @@ func TestGraphWithMergingBranches(t *testing.T) {
 
 func TestBadInputsReturnErrors(t *testing.T) {
 	tests := []struct {
-		Start  []*Node
+		Start  []*Node[string]
 		Data   map[string]any
 		ExpErr error
 	}{
 		{
-			Start: []*Node{{Rules: map[string]any{"bad rule": 1}}},
+			Start: []*Node[string]{{Rules: map[string]any{"bad rule": 1}}},
 		},
 		{
 			// returns a non-boolean
-			Start: []*Node{{Rules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)}},
+			Start: []*Node[string]{{Rules: mustParse(`{"if" : [ {"var":["is_smoker"]}, 100, 50 ]}`)}},
 		},
 		{
-			Start: []*Node{{WeightRules: mustParse(`{"var": ["is_smoker"]}`)}},
+			Start: []*Node[string]{{WeightRules: mustParse(`{"var": ["is_smoker"]}`)}},
 		},
 		{
-			Start: []*Node{{WeightRules: map[string]any{"bad rule": 1}}},
+			Start: []*Node[string]{{WeightRules: map[string]any{"bad rule": 1}}},
 		},
 		{
-			Start: []*Node{{Transitions: []*Node{{Rules: map[string]any{"bad rule": 1}}}}},
+			Start: []*Node[string]{{Transitions: []*Node[string]{{Rules: map[string]any{"bad rule": 1}}}}},
 		},
 	}
 	for _, test := range tests {
@@ -220,15 +220,15 @@ func TestBadInputsReturnErrors(t *testing.T) {
 }
 
 func TestLoopDoesntRunForever(t *testing.T) {
-	a := &Node{Payload: "a"}
-	b := &Node{Payload: "b"}
-	c := &Node{Payload: "c"}
-	a.Transitions = []*Node{b}
-	b.Transitions = []*Node{c}
-	c.Transitions = []*Node{a}
+	a := &Node[string]{Payload: "a"}
+	b := &Node[string]{Payload: "b"}
+	c := &Node[string]{Payload: "c"}
+	a.Transitions = []*Node[string]{b}
+	b.Transitions = []*Node[string]{c}
+	c.Transitions = []*Node[string]{a}
 	doneChan := make(chan bool)
 	go func() {
-		_, _ = Solve([]*Node{a}, nil)
+		_, _ = Solve([]*Node[string]{a}, nil)
 		doneChan <- true
 	}()
 	select {
@@ -238,14 +238,35 @@ func TestLoopDoesntRunForever(t *testing.T) {
 	}
 }
 
+func TestDynamicVariable(t *testing.T) {
+	graph := []*Node[string]{
+		{Payload: "a", Rules: mustParse(`
+{
+  "==": [
+    { "var": [
+      {"var": ["foo"] }
+     ]},
+   10
+  ]
+}`)},
+	}
+	got, err := Solve(graph, mustParse(`{"foo": "bar", "bar": 10}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, node := range got {
+		fmt.Println(node.Payload)
+	}
+}
+
 func BenchmarkSolve(b *testing.B) {
-	graph := []*Node{
+	graph := []*Node[string]{
 		{
 			Payload: "a",
-			Transitions: []*Node{
+			Transitions: []*Node[string]{
 				{Payload: "b"},
 				{
-					Payload: "c", Transitions: []*Node{
+					Payload: "c", Transitions: []*Node[string]{
 						{Payload: "d"},
 					},
 				},
@@ -254,10 +275,10 @@ func BenchmarkSolve(b *testing.B) {
 		{
 			Payload: "e",
 			Rules:   mustParse(`{"var": ["is_smoker"]}`),
-			Transitions: []*Node{
+			Transitions: []*Node[string]{
 				{Payload: "f"},
 				{
-					Payload: "g", Transitions: []*Node{
+					Payload: "g", Transitions: []*Node[string]{
 						{Payload: "h"},
 					},
 				},
@@ -273,10 +294,10 @@ func BenchmarkSolve(b *testing.B) {
 	}
 }
 
-func ids(nodes []*Node) []string {
-	var res []string
+func ids[T any](nodes []*Node[T]) []T {
+	var res []T
 	for _, n := range nodes {
-		res = append(res, n.Payload.(string))
+		res = append(res, n.Payload)
 	}
 	return res
 }
